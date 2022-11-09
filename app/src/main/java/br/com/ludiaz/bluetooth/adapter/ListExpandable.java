@@ -161,8 +161,7 @@ public class ListExpandable extends BaseExpandableListAdapter {
         return true;
     }
 
-    public void setNewItem(int groupPosition, DeviceItem deviceItem){
-
+    public boolean setNewItem(int groupPosition, DeviceItem deviceItem){
         List<DeviceItem> deviceItems =  mDevicesGroups.get(mGroups.get(groupPosition));
 
         boolean canInsert = true;
@@ -175,9 +174,11 @@ public class ListExpandable extends BaseExpandableListAdapter {
         }
 
         if(canInsert) {
+            deviceItems.add(deviceItem);
             mDevicesGroups.replace(mGroups.get(groupPosition), deviceItems);
+            notifyDataSetChanged();
         }
 
-        notifyDataSetChanged();
+        return canInsert;
     }
 }

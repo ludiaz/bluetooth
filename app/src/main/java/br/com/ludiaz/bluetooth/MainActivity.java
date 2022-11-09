@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -14,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -29,11 +31,14 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import br.com.ludiaz.bluetooth.adapter.ListExpandable;
 import br.com.ludiaz.bluetooth.util.DeviceItem;
@@ -48,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     private List<DeviceItem> find = new ArrayList<>();
 
     private DeviceItem sDeviceItem = null;
+
+    private UUID mUUID;
 
     private int lastSelection = -1;
 
@@ -153,6 +160,19 @@ public class MainActivity extends AppCompatActivity {
             bluetoothResultLauncher.launch(enableBtIntent);
         }
 
+        try {
+            Method getUuidsMethod = BluetoothAdapter.class.getDeclaredMethod("getUuids", null);
+            ParcelUuid[] uuids = (ParcelUuid[]) getUuidsMethod.invoke(bluetoothAdapter, null);
+
+            mUUID = uuids[0].getUuid();
+        }catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }catch (IllegalAccessException e){
+            e.printStackTrace();
+        }catch (NoSuchMethodException e){
+            e.printStackTrace();
+        }
+
         setContentView(R.layout.activity_main);
         listDevices = findViewById(R.id.listDevices);
         listDevices.setOnChildClickListener(listDevicesOnChildClickListener);
@@ -170,6 +190,9 @@ public class MainActivity extends AppCompatActivity {
         ListExpandable listExpandable = new ListExpandable(this, listGroups, devicesGroups);
         // define o adapter do ExpandableListView
         listDevices.setAdapter(listExpandable);
+
+        listDevices.expandGroup(0);
+        listDevices.expandGroup(1);
 
         pairedDevices();
 
@@ -223,7 +246,6 @@ public class MainActivity extends AppCompatActivity {
                 if(deviceName != null){
                     if(!deviceName.equals("")){
                         DeviceItem deviceItem = new DeviceItem(1, deviceName, deviceHardwareAddress, device);
-
                         paireds.add(deviceItem);
                         setListPaireds(deviceItem);
                     }
@@ -237,10 +259,10 @@ public class MainActivity extends AppCompatActivity {
     private void setListPaireds(DeviceItem deviceItem){
         try {
             br.com.ludiaz.bluetooth.adapter.ListExpandable adapter = (ListExpandable) listDevices.getExpandableListAdapter();
-            adapter.setNewItem(0, deviceItem);
-            listDevices.setFastScrollEnabled(true);
-
-            adapter.notifyDataSetChanged();
+            if(adapter.setNewItem(0, deviceItem)){
+                listDevices.collapseGroup(0);
+                listDevices.expandGroup(0, true);
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -271,28 +293,32 @@ public class MainActivity extends AppCompatActivity {
 
                 if(deviceName != null) {
                     if (!deviceName.equals("")) {
-
                         DeviceItem deviceItem = new DeviceItem(1, deviceName, deviceHardwareAddress, device);
-
-                        setListDiscover(deviceItem);
                         find.add(deviceItem);
+                        setListDiscover(deviceItem);
                     }
                 }
             }
         }
     };
 
-
     private void setListDiscover(DeviceItem deviceItem){
         Log.d("DiscoverDevices", "setListDiscover");
         try {
             br.com.ludiaz.bluetooth.adapter.ListExpandable adapter = (ListExpandable) listDevices.getExpandableListAdapter();
 
-            adapter.setNewItem(1, deviceItem);
+            Log.d("DiscoverDevices-setListDiscover", deviceItem.getName());
 
-            adapter.notifyDataSetChanged();
+            if(adapter.setNewItem(1, deviceItem)){
+                listDevices.collapseGroup(1);
+                listDevices.expandGroup(1, true);
 
-            Log.d("DiscoverDevices-setListDiscover", "ok");
+                Log.d("DiscoverDevices-setListDiscover", "inserted!");
+            }else{
+                Log.d("DiscoverDevices-setListDiscover", "exists!");
+            }
+
+
         }catch (Exception e){
             Log.d("DiscoverDevices-setListDiscover", "error");
             e.printStackTrace();
@@ -331,9 +357,9 @@ public class MainActivity extends AppCompatActivity {
         super.onContextItemSelected(item);
 
         if(item.getTitle().equals(getString(R.string.label_unpair))){
-            unpairDevice(sDeviceItem.getBlueoothDevice());
+            unpairDevice(sDeviceItem);
         }else if(item.getTitle().equals(getString(R.string.label_pair))){
-            pairDevice(sDeviceItem.getBlueoothDevice());
+            pairDevice(sDeviceItem);
         }else{
             return false;
         }
@@ -359,35 +385,123 @@ public class MainActivity extends AppCompatActivity {
 
             if(sDeviceItem == null){
                 Log.d("listDevicesOnChildClickListener", "sDeviceItem is null");
-            }else if(groupPosition == 0){
-                unpairDevice(sDeviceItem.getBlueoothDevice());
-            }else if(groupPosition == 1){
-                pairDevice(sDeviceItem.getBlueoothDevice());
+            }else{
+                confirmAction(groupPosition, sDeviceItem);
             }
+
+            parent.setItemChecked(index, false);
 
             return true;
         }
     };
 
-    private void pairDevice(BluetoothDevice device){
+    private void confirmAction(int action, DeviceItem deviceItem){
+
+        listDevices.setSelected(false);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.app_name);
+        if(action == 0) {
+            builder.setMessage(getString(R.string.label_confirm_unpair) + " " + deviceItem.getName() + "?");
+            builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    unpairDevice(deviceItem);
+                }
+            });
+        }else if(action == 1) {
+            builder.setMessage(getString(R.string.label_confirm_pair) + " " + deviceItem.getName() + "?");
+            builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    pairDevice(deviceItem);
+                }
+            });
+        }
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+            }
+        });
+        builder.create().show();
+    }
+
+    private void pairDevice(DeviceItem deviceItem){
         try {
             Log.d("pairDevice()", "Start Pairing...");
-            Method m = device.getClass().getMethod("createBond", (Class[]) null);
-            m.invoke(device, (Object[]) null);
+            Toast.makeText(getApplicationContext(), R.string.label_trying_pairing_device +" "+deviceItem.getName()+"...", Toast.LENGTH_SHORT).show();
+            Method m = deviceItem.getBlueoothDevice().getClass().getMethod("createBond", (Class[]) null);
+            m.invoke(deviceItem.getBlueoothDevice(), (Object[]) null);
             Log.d("pairDevice()", "Pairing finished.");
         } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), R.string.label_pair_error, Toast.LENGTH_SHORT).show();
             Log.e("pairDevice()", e.getMessage());
         }
     }
 
-    private void unpairDevice(BluetoothDevice device) {
+    private void unpairDevice(DeviceItem deviceItem) {
         try {
             Log.d("unpairDevice()", "Start Un-Pairing...");
-            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
-            m.invoke(device, (Object[]) null);
+            Toast.makeText(getApplicationContext(), R.string.label_trying_unpairing_device +" "+deviceItem.getName()+"...", Toast.LENGTH_SHORT).show();
+            Method m = deviceItem.getBlueoothDevice().getClass().getMethod("removeBond", (Class[]) null);
+            m.invoke(deviceItem.getBlueoothDevice(), (Object[]) null);
             Log.d("unpairDevice()", "Un-Pairing finished.");
         } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), R.string.label_unpair_error, Toast.LENGTH_SHORT).show();
             Log.e("unpairDevice", e.getMessage());
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private class ConnectThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+
+        public ConnectThread(BluetoothDevice device) {
+            // Use a temporary object that is later assigned to mmSocket
+            // because mmSocket is final.
+            BluetoothSocket tmp = null;
+            mmDevice = device;
+
+            try {
+
+                // Get a BluetoothSocket to connect with the given BluetoothDevice.
+                // MY_UUID is the app's UUID string, also used in the server code.
+                tmp = device.createRfcommSocketToServiceRecord(mUUID);
+            } catch (IOException e) {
+                Log.e("ConnectThread", "Socket's create() method failed", e);
+            }
+            mmSocket = tmp;
+        }
+
+        public void run() {
+            // Cancel discovery because it otherwise slows down the connection.
+            bluetoothAdapter.cancelDiscovery();
+
+            try {
+                // Connect to the remote device through the socket. This call blocks
+                // until it succeeds or throws an exception.
+                mmSocket.connect();
+            } catch (IOException connectException) {
+                // Unable to connect; close the socket and return.
+                try {
+                    mmSocket.close();
+                } catch (IOException closeException) {
+                    Log.e("ConnectThread", "Could not close the client socket", closeException);
+                }
+                return;
+            }
+
+            // The connection attempt succeeded. Perform work associated with
+            // the connection in a separate thread.
+            //manageMyConnectedSocket(mmSocket);
+        }
+
+        // Closes the client socket and causes the thread to finish.
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+                Log.e("ConnectThread", "Could not close the client socket", e);
+            }
         }
     }
 }

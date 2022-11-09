@@ -18,4 +18,12 @@
     <string name="label_unpairing_device">Despareando Dispositivo!</string>
     <string name="label_pairing_device">Pareando Dispositivo!</string>
     <string name="label_child_click">Click on Child...</string>
+    <string name="label_confirm_pair">Confirma o paramento com</string>
+    <string name="label_confirm_unpair">Confirma o despareamento com</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+    <string name="label_trying_pairing_device">Tentando parear com</string>
+    <string name="label_trying_unpairing_device">Tentando desparear com</string>
+    <string name="label_unpair_error">Erro ao desparear!</string>
+    <string name="label_pair_error">Erro ao parear!</string>
 </resources>
