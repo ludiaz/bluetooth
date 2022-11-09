@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="list_padding">10dp</dimen>
+    <dimen name="shadow_width">15dp</dimen>
+    <dimen name="padding_content">10dp</dimen>
+    <dimen name="padding_menu">10dp</dimen>
+    <dimen name="padding_home">20dp</dimen>
+    <dimen name="title_size">18dp</dimen>
+    <dimen name="menu_size">16dp</dimen>
+    <dimen name="margin_left_icon_text">10dp</dimen>
+    <dimen name="menu_divider_height">0.1dp</dimen>
+    <dimen name="home_buttons_width">100dp</dimen>
+    <dimen name="home_buttons_height">100dp</dimen>
+    <integer name="num_cols">1</integer>
+    <dimen name="menu_icon_width">35dp</dimen>
+    <dimen name="menu_icon_height">35dp</dimen>
+    <dimen name="button_text_padding">10dp</dimen>
+    <dimen name="button_footer_size">35dp</dimen>
+</resources>

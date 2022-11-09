@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Bluetooth</string>
+    <string name="label_doesnt_support_bt">O dispositivo não suporta Bluetooth!</string>
+    <string name="label_doesnt_permission">Sem permissão para acessar o Bluetooth!</string>
+    <string name="message_need_permissions">Permissões necessárias!</string>
+    <string name="label_no">Não</string>
+    <string name="label_yes">Sim</string>
+    <string name="label_cancel">Cancelar</string>
+    <string name="label_doesnt_access_bt">Você precisar dar as permissões ao aplicativo para continuar!</string>
+    <string name="label_paired">Pareados</string>
+    <string name="label_find">Buscar</string>
+    <string name="bluetooth_not_supported">Seu dispositivo não tem suporte à Bluetooth!</string>
+    <string name="bluetoothle_not_supported">Seu dispositivo não tem suporte à Bluetooth Low Energy!</string>
+    <string name="label_no_device_paired_found">Nenhum dispositivo pareado encontrado!</string>
+    <string name="label_no_device_found">Nenhum dispositivo encontrado!</string>
+    <string name="label_pair">Parear</string>
+    <string name="label_unpair">Desparear</string>
+    <string name="label_unpairing_device">Despareando Dispositivo!</string>
+    <string name="label_pairing_device">Pareando Dispositivo!</string>
+    <string name="label_child_click">Click on Child...</string>
+</resources>

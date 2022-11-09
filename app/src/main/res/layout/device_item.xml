@@ -1,0 +1,10 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/listItemLayout">
+
+    <TextView
+        style="@style/listText"
+        android:id="@+id/textViewName"
+        android:textIsSelectable="false" />
+
+</LinearLayout>
