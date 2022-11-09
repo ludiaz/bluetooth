@@ -20,6 +20,29 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            android.applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    def outputFile = output.outputFile
+                    if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                        if(!outputFile.name.endsWith('-debug.apk')){
+                            def fileFormat = "${applicationId}"
+                            fileFormat = fileFormat + "_" + defaultConfig.versionName
+                            fileFormat = fileFormat + "-" + "${defaultConfig.versionCode}"
+                            //fileFormat = fileFormat + "_" + new Date().format("yyyyMMddHHmmss")
+                            def fileName = outputFile.name.replace("app", fileFormat)
+                            outputFileName = fileName
+                            println(outputFileName)
+                        }
+                    }
+
+                }
+            }
+        }
+
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
         }
     }
     compileOptions {
